@@ -50,7 +50,7 @@ Pour cette partie, on va procéder de manière similaire à la précédente, mai
 
 La première chose que l'on fait est préparer l'image docker avec Node.js. En cherchant sur docker-hub, on constate qu'à [cette addresse](https://hub.docker.com/_/node/), on a une image docker officielle pour node.js avec les différentes version. Comme conseillé, on a choisi la dernière version stable de Node.js. Actuellement, la version stable est la 6.11, on a donc choisi l'image correspondante.
 
-```docker
+```dockerfile
 FROM node:6.11
 COPY src /opt/app
 CMD ["node", "/opt/app/index.js"]
