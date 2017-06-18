@@ -43,3 +43,15 @@ Après ces manipulations, on peut aller chercher sur internet des templates de p
 Après avoir téléchargé les dossiers de cette page web, on reconstruit le container de l’image modifiée comme avant, avec la commande de build. Si on regarde via le navigateur les sites dans les containers lancés auparavant, on verra que rien ne change car il n’y a pas de lien dynamique avec les modifications que l’on a faites et que l’on vient de reconstruire sur notre image. Donc il faut arrêter un serveur (celui sur 9090 par exemple), on lance à nouveau le serveur avec la commande run et on vérifie le fonctionnement (on peut aussi voir que le container lancé sur un autre port que le 9090 n’est pas modifié et on prouve qu’il n’y pas de lien dynamique).
 
 On peut observer nos fichiers en local sur le navigateur et on peut se mettre à modifier ce qu’on veut dans le fichier index.html (comme avant) voire les autres dans le dossier téléchargé, pour personnaliser le site web. Comme les fichiers sont bien structurés, on peut facilement visualiser les endroits où se trouvent chaque information ou donnée de la page web et ainsi les modifier plutôt facilement pour la personnaliser à notre goût. Il nous suffir de réitérer l'étape au dessus pour mettre à jour notre container.
+
+## Partie 3
+
+### instructions rapides (à changer)
+* Lancer les deux containers des deux premières parties
+* faire un `docker inspect` sur les containers pour vérifier les addresses ip des des machines
+* vérifier dans `apache-reverse-proxy/conf/001-reverse-proxy.conf` que l'adresse menant à `/api/quotes/` ait l'addresse de la machine express dynamique
+* vérifier dans `apache-reverse-proxy/conf/001-reverse-proxy.conf` que l'adresse menant à `/` ait l'addresse de la machine apache statique
+* Build l'image du reverse disponible dans `apache-reverse-proxy`
+* modifier le fichier hosts pour pouvoir accéder au site (sur windows, accéder avec droits administrateurs au fichier `C:\Windows\System32\drivers\etc\hosts` et ajouter la ligne `192.168.99.100     demo.res.ch` ou l'addresse de la machine docker si ce n'est pas celle par défaut)
+* accéder sur un browser à l'addresse `http://demo.res.ch:8080` pour accéder au site principal 
+* accéder sur un browser à l'addresse `http://demo.res.ch:8080/api/quotes/` pour accéder aux quotes via express
