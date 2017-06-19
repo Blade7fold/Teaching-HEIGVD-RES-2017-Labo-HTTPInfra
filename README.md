@@ -165,15 +165,64 @@ Enfin, la fonction `generateQuoteList()` génère un nombre aléatoire de ces ci
 Une fois le serveur lancé dans un container docker, on peut l'utiliser simplement en envoyant une requête à la machine docker avec son addresse et le bon port, dans notre cas : `192.168.99.100:9090` (considérant qu'on ait mit en place une correspondance des ports entre la machine docker et le container avec la commande `docker run -p 9090:3000 res/express_quotes`). Le serveur répond effectivement avec un json composé de citations aléatoires, que ce soit via un navigateur ou via postman.
 ## Partie 3
 
-### instructions rapides (à changer)
-* Lancer les deux containers des deux premières parties
-* faire un `docker inspect` sur les containers pour vérifier les addresses ip des des machines
-* vérifier dans `apache-reverse-proxy/conf/001-reverse-proxy.conf` que l'adresse menant à `/api/quotes/` ait l'addresse de la machine express dynamique
-* vérifier dans `apache-reverse-proxy/conf/001-reverse-proxy.conf` que l'adresse menant à `/` ait l'addresse de la machine apache statique
-* Build l'image du reverse disponible dans `apache-reverse-proxy`
-* modifier le fichier hosts pour pouvoir accéder au site (sur windows, accéder avec droits administrateurs au fichier `C:\Windows\System32\drivers\etc\hosts` et ajouter la ligne `192.168.99.100     demo.res.ch` ou l'addresse de la machine docker si ce n'est pas celle par défaut)
-* accéder sur un browser à l'addresse `http://demo.res.ch:8080` pour accéder au site principal 
-* accéder sur un browser à l'addresse `http://demo.res.ch:8080/api/quotes/` pour accéder aux quotes via express
+### Reverse Proxy
+Dans cette partie, on a mis en place un reverse proxy pour faire un point d'entrée unique à notre site internet. Cela est possible grâce à des modules apaches qui permettent de faire des proxy et des reverse proxy.
+### Fichiers de configuration
+Pour configurer le proxy, on gère en local les fichiers à modifier dans le container du reverse proxy, notamment dans le dossier conf. Dans le dossier de configuration de apache, on trouve un dossier `sites-avaliable` qui contient les sites logiques disponibles. On a modifié le fichier par défaut `000-default.conf` comme tel :
+```
+<VirtualHost *:80>
+</VirtualHost>
+```
+
+Le but est que les requêtes de base tombent sur ce site virtuel qui ne fournit pas de contenu. On a également un second fichier `001-reverse-proxy.conf` avec le contenu suivant :
+```
+<VirtualHost *:80>
+   ServerName demo.res.ch
+
+   #ErrorLog ${APACHE_LOG_DIR}/error.log
+   #CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+   ProxyPass "/api/quotes/" "http://172.17.0.3:3000/"
+   ProxyPassReverse "/api/quotes/" "http://172.17.0.3:3000/"
+
+   ProxyPass "/" "http://172.17.0.2:80/"
+   ProxyPassReverse "/" "http://172.17.0.2:80/"
+</VirtualHost>
+```
+Le but ici est de fournir du contenu uniquement via l'url `demo.res.ch`. Dans ce cas, le reverse proxy redirigera les requêtes selon les lignes `ProxyPass` et `ProxyPassReverse` pour la réponse. Si on passe par `/api/quotes/`, on redirige sur le serveur express qui fourni nos citations. Si on ne spécifie rien de particulier, il redirige vers le serveur statique apache.
+
+À noter que les addresses sont ici en dur, donc il faut les changer si les addresses des containers sont différentes, en les obtenant avec un `docker inspect <nom du container>`.
+
+### Image docker
+
+Le container Docker du reverse proxy est construit avec le docker file suivant :
+```dockerfile
+FROM php:5.6-apache
+
+RUN apt-get update && \
+	apt-get install -y vim
+    
+COPY conf/ /etc/apache2
+
+RUN a2enmod proxy proxy_http
+RUN a2ensite 000* 001*
+```
+
+On copie donc les données avec le dossier conf en les ajoutant à la configuration de apache.
+
+Les deux lignes de run lancent des scripts apache prédéfinis. `a2enmod` permet de lancer des modules apache, en l'occurence pour activer les modules proxy dont on a besoin. `a2ensite` permet d'activer des sites virtuels qui sont après copie seulement disponibles, mais pas actifs. Il va donc activer tous les sites commençant par `000` ou  `001`, et donc les deux hôtes virtuels définis plus haut.
+
+### Utilisation
+
+Étant donné que nous somme sur windows avec docker dans une machine virtuelle linux, pour faire la requête via le navigateur en utilisant l'addresse `demo.res.ch:8080` il nous faut changer le fichier hosts de windows dans `C:\Windows\System32\drivers\etc\hosts` et ajouter la ligne `192.168.99.100	demo.res.ch` pour faire le lien entre l'addresse et le nom de domaine. Les requêtes  ainsi faites dans le navigateur se feront avec le nom d'hôte correspondant tout en menant à la bonne addresse ip.
+
+Il nous suffit donc d'accéder aux deux sites via cette addresse comme suit :
+
+commande | ressource
+---|---
+`http://demo.res.ch:8080` | accès au site statique sur le serveur apache
+`http://demo.res.ch:8080/api/quotes/` | accès au site dynamique sur le serveur express
+
 ## Partie 4
 
 ### AJAX (JQuery)
@@ -241,18 +290,7 @@ Les lignes à remarquer seraient:
 Ligne JS | Explication
 --- | ---
 ` $.getJSON("api/quotes/", function(quotes) ` | Requête JQuery pour récuperer les quotes dans l'adresse ` api/quotes/ `, lequels vont s'afficher sur la page web
-``` js 
-for (var i = quotes.length - 1; i >= 0; i--) {
-    content +=
-    "<div class=\"col-lg-12\">" +
-    "<h4>" + quotes[i].quote + "</h4>" +
-    "<h5>" + quotes[i].country + ", " + quotes[i].date + "</h5>" +
-    "<p class=\"text-muted\">" + quotes[i].author + "</p>" +
-    "<a href=\"" + quotes[i].source + "\">source</a>" +
-    "<hr>" +
-    "</div>";
-}
-``` | Boucle pour afficher toutes les quotes
+`for (var i = quotes.length - 1; i >= 0; i--) {...}`| Boucle pour construire toutes les quotes en html telles qu'affichées
 ` $("div.quotes-place").html(content); ` | JQuery pour sélectionner la classe dans laquelle on va afficher les quotes
 ` setInterval(loadQuotes, 3000); ` | On donne un intervalle pour actualiser les quotes chaque 3000 ms 
 
