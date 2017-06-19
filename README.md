@@ -174,3 +174,25 @@ Une fois le serveur lancé dans un container docker, on peut l'utiliser simpleme
 * modifier le fichier hosts pour pouvoir accéder au site (sur windows, accéder avec droits administrateurs au fichier `C:\Windows\System32\drivers\etc\hosts` et ajouter la ligne `192.168.99.100     demo.res.ch` ou l'addresse de la machine docker si ce n'est pas celle par défaut)
 * accéder sur un browser à l'addresse `http://demo.res.ch:8080` pour accéder au site principal 
 * accéder sur un browser à l'addresse `http://demo.res.ch:8080/api/quotes/` pour accéder aux quotes via express
+## Partie 3
+
+### AJAX (JQuery)
+Dans cette partie, on va créer un script JavaScript en utilisant des JQuery et faire une requête AJAX et actualiser l'élément DOM.
+### Outil vim
+Pour ceci, d'abord, on va rajouter 2 lignes dans chaque Dockerfile de chaque image pour pouvoir faire des modifications sur les fichiers en local et pouvoir tester avant de faire des réelles modifications sur les fichiers que l'on va utiliser par la suite. Les lignes sont les suivante: 
+``` dockerfile
+RUN apt-get update && \
+  apt-get install -y vim
+```
+La premère sert à actualiser les applications dans l'image et celle d'après pour installer l'outil vim, pour pouvoir modifier les fichiers en local d'abord. On utilisait ceci à l'étape précedente, mais que en local, donc il faut le faire maintenant à chaque fois que l'on construit les imgaes docker.
+### Fichier JavaScript
+Après avoir reconstruit et lancé les images, on va utiliser la commande ``` docker exec -it <nom image statique> /bin/bash ``` pour acceder au fichier .html de notre page web et créer un fichier .js pour faire les requêtes Ajax.
+Pour ceci, on va d'abord créer une copie de notre page .html pour pouvoir garder l'original et on va rajouter à la fin du ficher, où se trouvent les scripts d'affichage de la page web, les lignes suivantes:
+``` html
+<!-- Custom script to load quotes -->
+<script src="js/<nom du fichier JavaScript>.js"></script>
+```
+Ces lignes seront utilisées pour créer le script de JQuery, mais si on regarde maintenant dans notre page web en faisant click-droit de la souris et un allant sur l'option "Inspecter", on peut voir dans la console qu'il y a une erreur car il ne trouve pas le fichier .js que l'on vient de rajouter (dans notre cas, quotes.js, mais le nom peut être différent si voulu).
+Dans l'onglet Sources, on peut voir les sources de notre fichier .html, et dans l'onglet Network, on verra plus en détail l'erreur par rapport à ce fichier, car quand il fait une reqête GET, il ne le trouve pas, donc on va le créer (toujours en local).
+Pour créer le fichier, on execute la commande ``` touch <nom du fichier JavaScript>.js ``` et après ``` vi <nom du fichier JavaScript>.js ``` pour pouvoir le modifier.
+Dans le fichier .js, on va écrire les lignes nécessaire pour pouvoir changer la page .html selon ce qu'on veut. Nous 
