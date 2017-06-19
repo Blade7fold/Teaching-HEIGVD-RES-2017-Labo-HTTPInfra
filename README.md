@@ -257,6 +257,10 @@ for (var i = quotes.length - 1; i >= 0; i--) {
 ` setInterval(loadQuotes, 3000); ` | On donne un intervalle pour actualiser les quotes chaque 3000 ms 
 
 Après avoir fait ces modifications en local, on vérifie directement sur la page web que l'on a bien fait les modifications et que les quotes s'affichent bien. Si c'est le cas, on prend les modifications des différents fichiers et on crée ces mêmes fichers dans nos propre dossiers. Donc le fichier .js ira dans le dossier ` content/js/ ` et il faudra modifier le fichier .html pour pouvoir utiliser le script .js.
-## Partie 4
+## Partie 5
 
 ### Configuration dynamique
+Dans cette partie nous allons configurer les adresses IP dynamiquement dans un autre fichier que le fichier config du début du laboratoire.
+
+### Variables d'environement
+Nous allons donc passer des variables d'environement à notre reverse proxy qui contiendront les adresses IP des containers que l'on va lancer.
