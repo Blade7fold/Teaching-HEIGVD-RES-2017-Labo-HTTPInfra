@@ -163,3 +163,14 @@ Enfin, la fonction `generateQuoteList()` génère un nombre aléatoire de ces ci
 
 ### Utilisation
 Une fois le serveur lancé dans un container docker, on peut l'utiliser simplement en envoyant une requête à la machine docker avec son addresse et le bon port, dans notre cas : `192.168.99.100:9090` (considérant qu'on ait mit en place une correspondance des ports entre la machine docker et le container avec la commande `docker run -p 9090:3000 res/express_quotes`). Le serveur répond effectivement avec un json composé de citations aléatoires, que ce soit via un navigateur ou via postman.
+## Partie 3
+
+### instructions rapides (à changer)
+* Lancer les deux containers des deux premières parties
+* faire un `docker inspect` sur les containers pour vérifier les addresses ip des des machines
+* vérifier dans `apache-reverse-proxy/conf/001-reverse-proxy.conf` que l'adresse menant à `/api/quotes/` ait l'addresse de la machine express dynamique
+* vérifier dans `apache-reverse-proxy/conf/001-reverse-proxy.conf` que l'adresse menant à `/` ait l'addresse de la machine apache statique
+* Build l'image du reverse disponible dans `apache-reverse-proxy`
+* modifier le fichier hosts pour pouvoir accéder au site (sur windows, accéder avec droits administrateurs au fichier `C:\Windows\System32\drivers\etc\hosts` et ajouter la ligne `192.168.99.100     demo.res.ch` ou l'addresse de la machine docker si ce n'est pas celle par défaut)
+* accéder sur un browser à l'addresse `http://demo.res.ch:8080` pour accéder au site principal 
+* accéder sur un browser à l'addresse `http://demo.res.ch:8080/api/quotes/` pour accéder aux quotes via express

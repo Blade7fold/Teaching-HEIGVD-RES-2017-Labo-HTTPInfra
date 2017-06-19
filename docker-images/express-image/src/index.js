@@ -6,7 +6,6 @@ const quoteRandom = ProgQuote();
 
 const dateFormat = require('dateformat');
 
-
 const Express = require("express");
 const app = Express();
 
@@ -37,7 +36,7 @@ chance.mixin({
             }),
             author: chance.first() + " " + chance.last(),
             source: chance.url({
-                domain: "www.randomprogquotesfromtheinterner.com"
+                domain: "www.randomprogquotesfromtheinternet.com"
             }),
             date: dateFormat(date, "'quoted the 'ddS mmmm yyyy")
         };
