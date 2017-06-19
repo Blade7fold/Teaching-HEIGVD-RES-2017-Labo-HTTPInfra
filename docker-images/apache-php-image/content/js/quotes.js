@@ -4,22 +4,26 @@ $(function() {
     function loadQuotes() {
         $.getJSON("api/quotes/", function(quotes) {
             console.log(quotes);
+            var content = "<h1>No quotes for you (no quote found)</h1>";
             if(quotes.length > 0) {
-            
-                var content = "";
+
+                content = "";
 
                 for (var i = quotes.length - 1; i >= 0; i--) {
                     content +=
                     "<div class=\"col-lg-12\">" +
-                    "<h3>" + quotes[i].quote + "</h3>" +
+                    "<h4>" + quotes[i].quote + "</h4>" +
+                    "<h5>" + quotes[i].country + ", " + quotes[i].date + "</h5>" +
                     "<p class=\"text-muted\">" + quotes[i].author + "</p>" +
-                    "<h4>" + quotes[i].country + ", " + quotes[i].date + "</h4>" +
-                    "<a href=\"" + quotes[i].source + "\">source</a>"
+                    "<a href=\"" + quotes[i].source + "\">source</a>" +
+                    "<hr>" +
                     "</div>";
                 }
 
-                $("div.quotes-place").html(content);
+                
             }
+
+            $("div.quotes-place").html(content);
         });
     };
 
