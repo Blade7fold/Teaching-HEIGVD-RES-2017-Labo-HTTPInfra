@@ -30,7 +30,7 @@ Si on relance l’image avec `docker run -p 9090:80 <nom_image>`, on pourra voir
 
 `"192.168.99.1 - - [04/Jun/2017:14:56:31 +0000] "GET / HTTP/1.1" 200 431 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"`
 
-partie de requête | explication
+Partie de requête | Explication
 --- | ---
 `192.168.99.1 - - [04/Jun/2017:14:56:31 +0000] "GET / HTTP/1.1" 200 431 "-" ` | Réponse avec 200, ce qui veut dire bonne requête, le slash après le GET est l’URL visée par la requête
 ` "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36" `| user agent (type de navigateur)
@@ -174,7 +174,7 @@ Une fois le serveur lancé dans un container docker, on peut l'utiliser simpleme
 * modifier le fichier hosts pour pouvoir accéder au site (sur windows, accéder avec droits administrateurs au fichier `C:\Windows\System32\drivers\etc\hosts` et ajouter la ligne `192.168.99.100     demo.res.ch` ou l'addresse de la machine docker si ce n'est pas celle par défaut)
 * accéder sur un browser à l'addresse `http://demo.res.ch:8080` pour accéder au site principal 
 * accéder sur un browser à l'addresse `http://demo.res.ch:8080/api/quotes/` pour accéder aux quotes via express
-## Partie 3
+## Partie 4
 
 ### AJAX (JQuery)
 Dans cette partie, on va créer un script JavaScript en utilisant des JQuery et faire une requête AJAX et actualiser l'élément DOM.
@@ -187,12 +187,76 @@ RUN apt-get update && \
 La premère sert à actualiser les applications dans l'image et celle d'après pour installer l'outil vim, pour pouvoir modifier les fichiers en local d'abord. On utilisait ceci à l'étape précedente, mais que en local, donc il faut le faire maintenant à chaque fois que l'on construit les imgaes docker.
 ### Fichier JavaScript
 Après avoir reconstruit et lancé les images, on va utiliser la commande ``` docker exec -it <nom image statique> /bin/bash ``` pour acceder au fichier .html de notre page web et créer un fichier .js pour faire les requêtes Ajax.
+
 Pour ceci, on va d'abord créer une copie de notre page .html pour pouvoir garder l'original et on va rajouter à la fin du ficher, où se trouvent les scripts d'affichage de la page web, les lignes suivantes:
 ``` html
 <!-- Custom script to load quotes -->
 <script src="js/<nom du fichier JavaScript>.js"></script>
 ```
 Ces lignes seront utilisées pour créer le script de JQuery, mais si on regarde maintenant dans notre page web en faisant click-droit de la souris et un allant sur l'option "Inspecter", on peut voir dans la console qu'il y a une erreur car il ne trouve pas le fichier .js que l'on vient de rajouter (dans notre cas, quotes.js, mais le nom peut être différent si voulu).
-Dans l'onglet Sources, on peut voir les sources de notre fichier .html, et dans l'onglet Network, on verra plus en détail l'erreur par rapport à ce fichier, car quand il fait une reqête GET, il ne le trouve pas, donc on va le créer (toujours en local).
+
+Dans l'onglet Sources, on peut voir les sources de notre fichier .html, et dans l'onglet Network, on verra plus en détail l'erreur par rapport à ce fichier, car quand il fait une requête GET, il ne le trouve pas, donc on va le créer (toujours en local).
+
 Pour créer le fichier, on execute la commande ``` touch <nom du fichier JavaScript>.js ``` et après ``` vi <nom du fichier JavaScript>.js ``` pour pouvoir le modifier.
-Dans le fichier .js, on va écrire les lignes nécessaire pour pouvoir changer la page .html selon ce qu'on veut. Nous 
+
+Dans le fichier .js, on va écrire les lignes nécessaire pour pouvoir changer la page .html selon ce qu'on veut. Nous avons écrit ceci dans notre fichier .js:
+``` js
+$(function() {
+    console.log("Loading quotes");
+
+    function loadQuotes() {
+        $.getJSON("api/quotes/", function(quotes) {
+            console.log(quotes);
+            var content = "<h1>No quotes for you (no quote found)</h1>";
+            if(quotes.length > 0) {
+
+                content = "";
+
+                for (var i = quotes.length - 1; i >= 0; i--) {
+                    content +=
+                    "<div class=\"col-lg-12\">" +
+                    "<h4>" + quotes[i].quote + "</h4>" +
+                    "<h5>" + quotes[i].country + ", " + quotes[i].date + "</h5>" +
+                    "<p class=\"text-muted\">" + quotes[i].author + "</p>" +
+                    "<a href=\"" + quotes[i].source + "\">source</a>" +
+                    "<hr>" +
+                    "</div>";
+                }
+
+                
+            }
+
+            $("div.quotes-place").html(content);
+        });
+    };
+
+    loadQuotes();
+    setInterval(loadQuotes, 3000);
+});
+```
+Le fichier servira à modifier les quotes qui sont générées aléatoirement sur la page web dans le nouvel en-tête Quotes, qui les modifiera chaque 3 secondes.
+
+Les lignes à remarquer seraient:
+
+Ligne JS | Explication
+--- | ---
+` $.getJSON("api/quotes/", function(quotes) ` | Requête JQuery pour récuperer les quotes dans l'adresse ` api/quotes/ `, lequels vont s'afficher sur la page web
+``` js 
+for (var i = quotes.length - 1; i >= 0; i--) {
+    content +=
+    "<div class=\"col-lg-12\">" +
+    "<h4>" + quotes[i].quote + "</h4>" +
+    "<h5>" + quotes[i].country + ", " + quotes[i].date + "</h5>" +
+    "<p class=\"text-muted\">" + quotes[i].author + "</p>" +
+    "<a href=\"" + quotes[i].source + "\">source</a>" +
+    "<hr>" +
+    "</div>";
+}
+``` | Boucle pour afficher toutes les quotes
+` $("div.quotes-place").html(content); ` | JQuery pour sélectionner la classe dans laquelle on va afficher les quotes
+` setInterval(loadQuotes, 3000); ` | On donne un intervalle pour actualiser les quotes chaque 3000 ms 
+
+Après avoir fait ces modifications en local, on vérifie directement sur la page web que l'on a bien fait les modifications et que les quotes s'affichent bien. Si c'est le cas, on prend les modifications des différents fichiers et on crée ces mêmes fichers dans nos propre dossiers. Donc le fichier .js ira dans le dossier ` content/js/ ` et il faudra modifier le fichier .html pour pouvoir utiliser le script .js.
+## Partie 4
+
+### Configuration dynamique
