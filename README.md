@@ -226,7 +226,7 @@ commande | ressource
 ## Partie 4
 
 ### AJAX (JQuery)
-Dans cette partie, on va créer un script JavaScript en utilisant JQuery et faire une requête AJAX pour actualiser la page .html
+Dans cette partie, on va créer un script JavaScript en utilisant des JQuery et faire une requête AJAX et actualiser l'élément DOM.
 ### Outil vim
 Pour ceci, d'abord, on va rajouter 2 lignes dans chaque Dockerfile de chaque image pour pouvoir faire des modifications sur les fichiers en local et pouvoir tester avant de faire des réelles modifications sur les fichiers que l'on va utiliser par la suite. Les lignes sont les suivante: 
 ``` dockerfile
@@ -237,16 +237,16 @@ La premère sert à actualiser les applications dans l'image et celle d'après p
 ### Fichier JavaScript
 Après avoir reconstruit et lancé les images, on va utiliser la commande ``` docker exec -it <nom image statique> /bin/bash ``` pour acceder au fichier .html de notre page web et créer un fichier .js pour faire les requêtes Ajax.
 
-Pour ceci, on va d'abord créer une copie de notre page .html pour pouvoir garder l'original et on va rajouter à la fin du fichier, où se trouvent les scripts d'affichage de la page web, les lignes suivantes:
+Pour ceci, on va d'abord créer une copie de notre page .html pour pouvoir garder l'original et on va rajouter à la fin du ficher, où se trouvent les scripts d'affichage de la page web, les lignes suivantes:
 ``` html
 <!-- Custom script to load quotes -->
 <script src="js/<nom du fichier JavaScript>.js"></script>
 ```
-Ces lignes seront utilisées pour créer le script de JQuery, mais si on regarde maintenant dans notre page web en faisant click-droit de la souris et un allant sur l'option "Inspecter", on peut voir dans la console qu'il y a une erreur car il ne trouve pas le fichier .js que l'on vient de rajouter (dans notre cas, quotes.js, mais le nom peut être différent si voulu).
+Ces lignes seront utilisées pour récupérer le script de JQuery, mais si on regarde maintenant dans notre page web en faisant click-droit de la souris et un allant sur l'option "Inspecter", on peut voir dans la console qu'il y a une erreur car il ne trouve pas le fichier .js que l'on vient de rajouter (dans notre cas, quotes.js, mais le nom peut être différent si voulu).
 
 Dans l'onglet Sources, on peut voir les sources de notre fichier .html, et dans l'onglet Network, on verra plus en détail l'erreur par rapport à ce fichier, car quand il fait une requête GET, il ne le trouve pas, donc on va le créer (toujours en local).
 
-Pour créer le fichier, on execute la commande ``` touch <nom du fichier JavaScript>.js ``` et après ``` vi <nom du fichier JavaScript>.js ``` pour pouvoir le modifier.
+Pour créer le fichier, on execute la commande `touch <nom du fichier JavaScript>.js ` et après `vi <nom du fichier JavaScript>.js ` pour pouvoir le modifier.
 
 Dans le fichier .js, on va écrire les lignes nécessaire pour pouvoir changer la page .html selon ce qu'on veut. Nous avons écrit ceci dans notre fichier .js:
 ``` js
@@ -289,10 +289,10 @@ Les lignes à remarquer seraient:
 
 Ligne JS | Explication
 --- | ---
-` $.getJSON("api/quotes/", function(quotes) ` | Requête JQuery pour récuperer les quotes dans l'adresse ` api/quotes/ `, lequels vont s'afficher sur la page web
+` $.getJSON("api/quotes/", function(quotes) ` | Requête JQuery pour récuperer les quotes dans l'adresse ` api/quotes/ `, lequels vont être affichés sur la page web
 `for (var i = quotes.length - 1; i >= 0; i--) {...}`| Boucle pour construire toutes les quotes en html telles qu'affichées
-` $("div.quotes-place").html(content); ` | JQuery pour sélectionner la classe dans laquelle on va afficher les quotes
-` setInterval(loadQuotes, 3000); ` | On donne un intervalle pour actualiser les quotes chaque 3000 ms 
+` $("div.quotes-place").html(content); ` | JQuery pour sélectionner la classe dans laquelle on va afficher les quotes et ajouter le code html des quotes
+` setInterval(loadQuotes, 3000); ` | On appelle la méthode selon un intervalle pour actualiser les quotes chaque 3000 ms 
 
 Après avoir fait ces modifications en local, on vérifie directement sur la page web que l'on a bien fait les modifications et que les quotes s'affichent bien. Si c'est le cas, on prend les modifications des différents fichiers et on crée ces mêmes fichers dans nos propre dossiers. Donc le fichier .js ira dans le dossier ` content/js/ ` et il faudra modifier le fichier .html pour pouvoir utiliser le script .js.
 ## Partie 5
@@ -308,13 +308,13 @@ echo "Setup for the RES lab..."
 echo "Static App URL: $STATIC_APP"
 echo "Dynamic App URL: $DYNAMIC_APP"
 ```
-Ceci va nous permettre de passer les variables d'environement que l'on veut, dans notre cas, les adresses IP des containers statique et dynamique. Dans le Dockerfile du reverse proxy nous allons rajouter la ligne ` COPY apache2-foreground /usr/local/bin/ ` pour pouvoir utiliser le fichier "apache2-foreground", on construit l'image, on la démarre avec la commande ` docker run -e STATIC_APP=172.17.0.5:80 -e DYNAMIC_APP=172.17.0.8:3000 res/apache_rp ` et on verra que le terminal affichera les ligne que l'on a ajouter dans le fichier apache2 et que les adresses sont les mêmes que sur la commande.
+Ceci va nous permettre de passer les variables d'environement que l'on veut, dans notre cas, les adresses IP des containers statique et dynamique. Dans le Dockerfile du reverse proxy nous allons rajouter la ligne ` COPY apache2-foreground /usr/local/bin/ ` pour pouvoir utiliser le fichier "apache2-foreground", on construit l'image, on la démarre avec la commande ` docker run -e STATIC_APP=172.17.0.5:80 -e DYNAMIC_APP=172.17.0.8:3000 res/apache_rp ` et on verra que le terminal affichera les ligne que l'on a ajouté dans le fichier apache2 et que les adresses sont les mêmes que sur la commande.
 
 ### Template PHP
-Cette partie consiste à créer un fichier template de PHP pour lier les adresses passées dans les variables d'envirenement avec celle du reverse proxy pour ateindre les bons containers.
+Cette partie consiste à créer un fichier template de PHP pour lier les adresses passées dans les variables d'envirenement avec celle du reverse proxy pour atteindre les bons containers.
 
 Dans le fichier .php, on va donc rajouter le nécessaire pour faire ce lien, qui serait : 
-``` php
+```php
 <?php
 	$dynamic_app = getenv('DYNAMIC_APP');
 	$static_app = getenv('STATIC_APP');
