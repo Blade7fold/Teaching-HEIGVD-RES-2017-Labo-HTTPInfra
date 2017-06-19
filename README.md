@@ -226,7 +226,7 @@ commande | ressource
 ## Partie 4
 
 ### AJAX (JQuery)
-Dans cette partie, on va créer un script JavaScript en utilisant des JQuery et faire une requête AJAX et actualiser l'élément DOM.
+Dans cette partie, on va créer un script JavaScript en utilisant JQuery et faire une requête AJAX pour actualiser la page .html
 ### Outil vim
 Pour ceci, d'abord, on va rajouter 2 lignes dans chaque Dockerfile de chaque image pour pouvoir faire des modifications sur les fichiers en local et pouvoir tester avant de faire des réelles modifications sur les fichiers que l'on va utiliser par la suite. Les lignes sont les suivante: 
 ``` dockerfile
@@ -237,7 +237,7 @@ La premère sert à actualiser les applications dans l'image et celle d'après p
 ### Fichier JavaScript
 Après avoir reconstruit et lancé les images, on va utiliser la commande ``` docker exec -it <nom image statique> /bin/bash ``` pour acceder au fichier .html de notre page web et créer un fichier .js pour faire les requêtes Ajax.
 
-Pour ceci, on va d'abord créer une copie de notre page .html pour pouvoir garder l'original et on va rajouter à la fin du ficher, où se trouvent les scripts d'affichage de la page web, les lignes suivantes:
+Pour ceci, on va d'abord créer une copie de notre page .html pour pouvoir garder l'original et on va rajouter à la fin du fichier, où se trouvent les scripts d'affichage de la page web, les lignes suivantes:
 ``` html
 <!-- Custom script to load quotes -->
 <script src="js/<nom du fichier JavaScript>.js"></script>
@@ -301,4 +301,46 @@ Après avoir fait ces modifications en local, on vérifie directement sur la pag
 Dans cette partie nous allons configurer les adresses IP dynamiquement dans un autre fichier que le fichier config du début du laboratoire.
 
 ### Variables d'environement
-Nous allons donc passer des variables d'environement à notre reverse proxy qui contiendront les adresses IP des containers que l'on va lancer.
+Nous allons donc passer des variables d'environement à notre reverse proxy qui contiendront les adresses IP des containers que l'on va lancer. Tout d'abord, nous allons chercher dans le git officiel de php sur cette page [PHP Official GIT](https://github.com/docker-library/php/blob/master/) et on va chercher dans PHP 5.6 le fichier apache2-foreground, dans lequel on va rajouter les lignes suivantes:
+```
+#Add setup for RES lab
+echo "Setup for the RES lab..."
+echo "Static App URL: $STATIC_APP"
+echo "Dynamic App URL: $DYNAMIC_APP"
+```
+Ceci va nous permettre de passer les variables d'environement que l'on veut, dans notre cas, les adresses IP des containers statique et dynamique. Dans le Dockerfile du reverse proxy nous allons rajouter la ligne ` COPY apache2-foreground /usr/local/bin/ ` pour pouvoir utiliser le fichier "apache2-foreground", on construit l'image, on la démarre avec la commande ` docker run -e STATIC_APP=172.17.0.5:80 -e DYNAMIC_APP=172.17.0.8:3000 res/apache_rp ` et on verra que le terminal affichera les ligne que l'on a ajouter dans le fichier apache2 et que les adresses sont les mêmes que sur la commande.
+
+### Template PHP
+Cette partie consiste à créer un fichier template de PHP pour lier les adresses passées dans les variables d'envirenement avec celle du reverse proxy pour ateindre les bons containers.
+
+Dans le fichier .php, on va donc rajouter le nécessaire pour faire ce lien, qui serait : 
+``` php
+<?php
+	$dynamic_app = getenv('DYNAMIC_APP');
+	$static_app = getenv('STATIC_APP');
+?>
+<VirtualHost *:80>
+   ServerName demo.res.ch
+
+   #ErrorLog ${APACHE_LOG_DIR}/error.log
+   #CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+   ProxyPass '/api/quotes/' 'http://<?php print "$dynamic_app"?>:3000/'
+   ProxyPassReverse '/api/quotes/' 'http://<?php print "$dynamic_app"?>:3000/'
+
+   ProxyPass '/' 'http://<?php print "$static_app"?>:80/'
+   ProxyPassReverse '/' '<?php print "$static_app"?>:80/'
+</VirtualHost>
+```
+On peut voir que l'on rajoute le lignes de VirtualHost que l'on avait dans le fichier 001-reverse-proxy.config, mais cette fois on modifie ceci pour qu'il y ait des variables à la place d'avoir les adresses écrites en dur dans la configuration. Dans notre fichier config-template.php on a directement rajouter le bon port dans lequel communiquent les containers pour pas devoir l'écrire à chaque fois. Donc le but est d'avoir des variables à la place des adresses en dur et de changer les doubles guimets par des simples.
+
+Après avoir fini ces modifications, on mettra d'abord ce fichier template dans un dossier templates et après dans le Dockerfile on rajoute la ligne ` COPY templates /var/apache2/templates ` pour rajouter le fichier config-template dans l'image à l'endroit spécifier avec ` /var/apache2/templates `.
+
+Dans le fichier "apache2-foreground" on rajoute la ligne ` php /var/apache2/templates/config-template.php > /etc/apache2/sites-available/001-reverse-proxy.conf ` pour pouvoir écrire notre configuration dans config-template.php et la mettre dans le dossier de configuration en écrasant le fichier 001-reverse-proxy.conf pour utiliser le .php à la place.
+
+### Plusieurs containers en même temps
+Pour cette partie, on va donc vérifier les étapes précédentes en lançant plusieurs containers et en passant en paramètre les adresses IP des bons containers pour notre page web.
+
+On lance donc plusiers fois l'image de res/apache_static et l'image res/express_dynamic, on donne à une de ces images un nom (avec ` --name <nom de l'image> ` et on va faire un ` docker inspect <nom de l'image> | grep -i ipaddr ` pour qu'il nous dise l'adresse IP de ce container et donc la passer comme argument au moment de lancer le reverse proxy.
+
+On lance le reverse proxy avec ` docker run -d -e STATIC_APP=<adresse ip> -e DYNAMIC_APP=<adresse ip> --name <nom de l'image> -p 8080:80 res/apache_rp `, on affiche notre page web et on vérifie que tout s'est bien passé.
